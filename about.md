@@ -4,7 +4,7 @@ title: About
 permalink: /about/
 ---
 
-Some information about you!
+I'm a Norwegian programmer living in London.
 
 ### More Information
 
