@@ -1,3 +1,7 @@
+---
+layout: post
+title: You're up and running!
+---
 
 This package contains type-level combinators that hopefully feel familiar based
 on value-level operators. It exists on Hackage and Stackage under
