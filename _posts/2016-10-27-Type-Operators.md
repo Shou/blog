@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Type-level combinators
+title: Fun with type-level combinators
 ---
 
 How did you find your way here??? This document is work-in-progress.
