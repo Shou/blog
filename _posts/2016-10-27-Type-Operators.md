@@ -3,20 +3,15 @@ layout: post
 title: Type-level combinators
 ---
 
-Type-level operators have a long history in GHC. They originally were prefixed
-with `:` and older literature on the subject will have that present. [The
-proposal dates back eleven years](https://prime.haskell.org/wiki/InfixTypeConstructors),
-and talks about how operators were treated like variables in previous versions
-of GHC.
-[Servant](http://www.arow.info/blog/posts/2015-07-10-servant-intro.html) for
-example uses the old type operator format in datatype definitions.
-[With GHC 7.6 that all changed](https://ghc.haskell.org/trac/ghc/ticket/1930):
+How did you find your way here??? This document is work-in-progress.
+
+## A brief historical overview
+
+Type-level operators have a long, but subdued history in GHC. They were originally prefixed with `:` and older literature on the subject will have that present. [Servant](http://www.arow.info/blog/posts/2015-07-10-servant-intro.html) for example uses the old type operator format in datatype definitions. [The original proposal dates back eleven years](https://prime.haskell.org/wiki/InfixTypeConstructors), and also mentions how operators were treated like variables in previous versions of GHC. [With GHC 7.6 that all changed](https://ghc.haskell.org/trac/ghc/ticket/1930):
 
 > From the 7.6.1 release notes: "The behavior of the TypeOperator extension has changed: previously, only type operators starting with ":" were considered type constructors, and other operators were treated as type variables. Now type operators are always constructors. "
 
-So now we can't use type operators as variables anymore, and
-[some people were unhappy about that change](http://haskell.1045720.n5.nabble.com/Type-operators-in-GHC-td5154978.html)
-because it meant, e.g. that this was no longer possible:
+So nowadays we can't use type operators as variables anymore, and [some people were unhappy about that change](http://haskell.1045720.n5.nabble.com/Type-operators-in-GHC-td5154978.html) because it meant, e.g. that this was no longer possible:
 
 ```haskell
  >> :type a :: (Arrow (~>)) => a ~> b
@@ -25,9 +20,15 @@ because it meant, e.g. that this was no longer possible:
     Not in scope: type constructor or class `~>'
 ```
 
-In more recent changes: with GHC 7.10 and earlier, type-level operators are wonky in
-contexts without parentheses which is unfortunate because type-level combinators
-are often meant to strip parentheses.
+But on the other hand behaviour is more consistent and familiar as they took on behaviour from the value-level.
+
+## So how do I use them?
+
+
+
+
+
+In more recent changes: with GHC 7.10 and earlier, type-level operators are wonky in contexts without parentheses which is unfortunate because type-level combinators are often meant to strip parentheses.
 
 ```haskell
  >> a :: [Show, Num] <+> [a, b] => a -> b
@@ -37,23 +38,17 @@ are often meant to strip parentheses.
  >> a :: ([Show, Num] <+> [a, b]) => a -> b
 ```
 
-With GHC 8.0 this behaviour was rectified and parentheses are no longer
-necessary, allowing the first example.
+With GHC 8.0 this behaviour was rectified and parentheses are no longer necessary, allowing the first example.
 
-Type-level operators, in their current form, were talked about [briefly during
-the 2014 Christmas calendar "24 Days of GHC Extensions"](https://ocharles.org.uk/blog/posts/2014-12-08-type-operators.html),
-but otherwise they don't seem to have had much presence. I think that's
-unfortunate because I believe people *want* type-level combinators based on how
-much they're used at value-level, may just not be aware of it.
+-- Introduction to -XConstraintKinds and its effects
+
+
+
+Type-level operators, in their current form, were talked about [briefly during the 2014 Christmas calendar "24 Days of GHC Extensions"](https://ocharles.org.uk/blog/posts/2014-12-08-type-operators.html), but otherwise they don't seem to have had much presence. I think that's unfortunate because I believe people *want* type-level combinators based on how much they're used at value-level, may just not be aware of it.
 
 ## Type-level combinators
 
-Type-level operators are just what they say on the tin, and this means you can
-use `data`, `newtype`, `type`, `type family`, and so on, to
-define type constructors in the shape of operators. A 'common' example is the
-function application operator `$`, which can be defined in various ways, and as
-expected allows you to rid excessive parentheses and sequentialize your type
-signatures.
+Type-level operators are just what they say on the tin, and this means you can use `data`, `newtype`, `type`, `type family`, and so on, to define type constructors in the shape of operators. A 'common' example is the function application operator `$`, which can be defined in various ways, and as expected allows you to rid excessive parentheses and sequentialize your type signatures.
 
 ```
 type (f $ a) = f a
@@ -66,16 +61,11 @@ a :: Either String $ Maybe Int
 
 ## Why use them?
 
-You'd want to use type-level combinators for the same reasons you'd want them
-at the value-level: they're syntactic conveniences. They often strip parentheses
-away, or shave charcters off.
+You'd want to use type-level combinators for the same reasons you'd want them at the value-level: they're syntactic conveniences. They often strip parentheses away, or shave charcters off.
 
 ## Inspiration
 
-I've tried to take as much from already existing operators as possible so that
-the library should be familiar to any users who've dealt with value-level
-combinators in `base`. Applicative patterns such as `<$>` and `<*>` are
-for example possible, but without the applicative-ness of it.
+I've tried to take as much from already existing operators as possible so that the library should be familiar to any users who've dealt with value-level combinators in `base`. Applicative patterns such as `<$>` and `<*>` are for example possible, but without the applicative-ness of it.
 
 ```haskell
 type (<*>) f a = f a
@@ -88,17 +78,13 @@ a :: Either (SomeException -> IO ()) (Maybe Int)
 
 ## Other notes
 
-It could potentially also be possible to make `=>` into a type-level operator
-that takes a `Constraint` kind on the LHS. Just making a type-synonym for `=>`
-doesn't work the way you might expect, rather this constrains it *outside* the
-context and hence introduces RankNTypes.
+It could potentially also be possible to make `=>` into a type-level operator that takes a `Constraint` kind on the LHS. Just making a type-synonym for `=>` doesn't work the way you might expect, rather this constrains it *outside* the context and hence introduces RankNTypes.
 
 ```haskell
 type (==>) (c :: Constraint) (a :: *) = c => a
 ```
 
-An interesting change in behaviour between type-synonyms and type-families is
-how their types end up looking after compilation.
+An interesting change in behaviour between type-synonyms and type-families is how their types end up looking after compilation.
 
 ```haskell
 type (a * b) = (a, b)
@@ -113,8 +99,5 @@ type family (a * b) where
  undefined :: a * b :: (a, b)
 ```
 
-Type synonyms don't show the underlying definition of the type as you'd expect
-but type families do. This may make operator combinators more amicable to the
-novice as they can easily expose the underlying definition without having to
-look up Hackage documentation. Just whip out GHCi and go nuts.
+Type synonyms don't show the underlying definition of the type as you'd expect but type families do. This may make operator combinators more amicable to the novice as they can easily expose the underlying definition without having to look up Hackage documentation. Just whip out GHCi and go nuts.
 
