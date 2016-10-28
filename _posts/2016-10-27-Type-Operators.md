@@ -50,7 +50,7 @@ Type-level operators, in their current form, were talked about [briefly during t
 
 Type-level operators are just what they say on the tin, and this means you can use `data`, `newtype`, `type`, `type family`, and so on, to define type constructors in the shape of operators. A 'common' example is the function application operator `$`, which can be defined in various ways, and as expected allows you to rid excessive parentheses and sequentialize your type signatures.
 
-```
+```haskell
 type (f $ a) = f a
 type ($) f = f
 type family ($) f a where
