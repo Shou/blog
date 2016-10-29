@@ -101,3 +101,60 @@ type family (a * b) where
 
 Type synonyms don't show the underlying definition of the type as you'd expect but type families do. This may make operator combinators more amicable to the novice as they can easily expose the underlying definition without having to look up Hackage documentation. Just whip out GHCi and go nuts.
 
+
+## Partially applied type constructors
+
+One of the big conveniences functional programming has at the value-level is partial application. Remember the `<*>` type operator from earlier? That uses partial application to its advantage.
+
+```haskell
+ >> :t undefined :: Either <*> a <*> b
+undefined :: Either <*> a <*> b :: Either a b
+```
+
+`Either` is a a type defined using the `data` keyword, allowing partial application. We can also partially apply classes.
+
+```haskell
+
+class C a b where
+    c :: a -> b -> a
+
+test :: '[C a] <+> '[a, b] => a -> b -> a
+```
+
+However, what if we want to change the order of `C`'s arguments? At the value-level we have the trusty `flip` function. We can define it at the type-level.
+
+```haskell
+type Flip f a b = f b a
+
+ >> :t undefined :: '[Flip C b] <+> '[a,b] => a -> b -> a
+
+<interactive>:1:14: error:
+    * The type synonym `Flip' should have 3 arguments, but has been given 2
+    * In an expression type signature:
+        '[Flip C b] <+> '[a, b] => a -> b -> a
+      In the expression:
+          undefined :: '[Flip C b] <+> '[a, b] => a -> b -> a
+```
+
+Unfortunately, as you can probably tell, it's not very useful because we can't partially apply it — we can't partially apply type synonyms. The full power of partial application you're familiar with at the value-level is not possible at the type-level. Even simple cases don't work.
+
+```haskell
+type E a b = Either a b
+
+ >> :t undefined :: E <*> a <*> b
+<interactive>:1:14: error:
+    * The type synonym `E' should have 2 arguments, but has been given none
+    * In an expression type signature: (E <*> a) <*> b
+      In the expression: undefined :: (E <*> a) <*> b`
+```
+
+In some cases we are lucky and can define type synonyms partially applied, which does make it work. This simply isn't always possible, as is the case with Flip.
+
+```
+type E = Either
+undefined :: E <*> a <*> b :: E a b
+
+```
+
+Why?
+
