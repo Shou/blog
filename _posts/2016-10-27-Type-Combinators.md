@@ -37,7 +37,7 @@ type family ($) f a where
 a :: Either String $ Maybe Int
 ```
 
-You'd want to use type-level combinators for the same reasons you'd want them at the value-level: they're syntactic conveniences. They often strip parentheses away, or shave charcters off.
+You'd want to use type-level combinators for the same reasons you'd want them at the value-level: they're syntactic conveniences. They often strip parentheses away, or shave characters off.
 
 Some operators should be familiar to any users who've dealt with value-level combinators in `base`. Applicative patterns such as `<$>` with `<*>` are for example possible, but without the applicative-ness of it.
 
@@ -69,7 +69,7 @@ type family (a * b) where
 
 Type synonyms don't show the underlying definition of the type as you'd expect but type families do. This may make operator combinators more amicable to the novice as they can easily expose the underlying definition without having to look up Hackage documentation. Just whip out GHCi and go nuts.
 
-This operator is the tuple constructor -- some languages use this constructor instead of parentheses and commas, such as Isabelle. It comes from set theory's cartesian product operator, the logic behind it is that types are sets of values. One that accepts arbitrary size tuples up to 9 is also possible with type families.
+This operator is the tuple constructor -- some languages use this constructor instead of parentheses and commas, such as Isabelle. It comes from set theory's Cartesian product operator, the logic behind it is that types are sets of values. One that accepts arbitrary size tuples up to 9 is also possible with type families.
 
 ```haskell
 type family (f1 * f2) where
@@ -158,7 +158,7 @@ One of the big conveniences functional programming has at the value-level is par
 undefined :: Either <*> a <*> b :: Either a b
 ```
 
-`Either` is a a type defined using the `data` keyword, allowing partial application. We can also partially apply classes.
+`Either` is a type defined using the `data` keyword, allowing partial application. We can also partially apply classes.
 
 ```haskell
 class C a b where
