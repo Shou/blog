@@ -97,7 +97,7 @@ idM :: a >> a
 idM m = m >>= return . id
 ```
 
-Or a little more unconventional and compress function types with a sequence type family. This requires `-XUndecidableInstances` and `-XDataKinds`.
+Or a little more unconventional and compress function types with a sequence type family. This requires `-XUndecidableInstances` and `-XDataKinds`, which loosen the type family instance restrictions, and enable type-level literals including type-level lists.
 
 ```haskell
 type family IfEmpty xs a b where
