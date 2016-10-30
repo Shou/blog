@@ -37,9 +37,7 @@ a :: Either String $ Maybe Int
 
 You'd want to use type-level combinators for the same reasons you'd want them at the value-level: they're syntactic conveniences. They often strip parentheses away, or shave charcters off.
 
-## Inspiration
-
-I've tried to take as much from already existing operators as possible so that the library should be familiar to any users who've dealt with value-level combinators in `base`. Applicative patterns such as `<$>` and `<*>` are for example possible, but without the applicative-ness of it.
+Some operators should be familiar to any users who've dealt with value-level combinators in `base`. Applicative patterns such as `<$>` with `<*>` are for example possible, but without the applicative-ness of it.
 
 ```haskell
 type (<*>) f a = f a
@@ -50,13 +48,7 @@ a :: Either <*> SomeException ^> IO () <*> Maybe Int
 a :: Either (SomeException -> IO ()) (Maybe Int)
 ```
 
-## Other notes
-
-It could potentially also be possible to make `=>` into a type-level operator that takes a `Constraint` kind on the LHS. Just making a type-synonym for `=>` doesn't work the way you might expect, rather this constrains it *outside* the context and hence introduces RankNTypes.
-
-```haskell
-type (==>) (c :: Constraint) (a :: *) = c => a
-```
+The unmentioned operator here, `^>` is a tightly binding `->`, its fixity and precedence is `infixr ^> 8` like the `^` operator familiar from mathematics. It allows removal of parentheses to denote function types as arguments, seen above.
 
 An interesting change in behaviour between type-synonyms and type-families is how their types end up looking after compilation.
 
@@ -75,6 +67,76 @@ type family (a * b) where
 
 Type synonyms don't show the underlying definition of the type as you'd expect but type families do. This may make operator combinators more amicable to the novice as they can easily expose the underlying definition without having to look up Hackage documentation. Just whip out GHCi and go nuts.
 
+This operator is the tuple constructor -- some languages use this constructor instead of parentheses and commas, such as Isabelle. It comes from set theory's cartesian product operator, the logic behind it is that types are sets of values. One that accepts arbitrary size tuples up to 9 is also possible with type families.
+
+```haskell
+type family (f1 * f2) where
+    (*) (a, b, c, d, e, f, g, h) i = (a, b, c, d, e, f, g, h, i)
+    (*) (a, b, c, d, e, f, g)    h = (a, b, c, d, e, f, g, h)
+    (*) (a, b, c, d, e, f)       g = (a, b, c, d, e, f, g)
+    (*) (a, b, c, d, e)          f = (a, b, c, d, e, f)
+    (*) (a, b, c, d)             e = (a, b, c, d, e)
+    (*) (a, b, c)                d = (a, b, c, d)
+    (*) (a, b)                   c = (a, b, c)
+    (*) a                        b = (a, b)
+infixl 9 *
+```
+
+The downside to this is that it consumes tuples on the left, even if it's intended to be a tuple.
+
+We can also go a little crazy and define Applicative and Monadic constrained function type operators, with RankNTypes.
+
+```haskell
+type (a *> b) = forall m. Applicative m => m a -> m b
+
+type (a >> b) = forall m. Monad m => m a -> m b
+
+idM :: a >> a
+idM m = m >>= return . id
+```
+
+Going further with constraints, we can leverage the `-XConstraintKinds` language extension to make some pretty handy operators. This language extension gives us the `Constraint` kind allowing us to say a type variable has `c :: Constraint`, or even `f :: * -> Constraint`. For our example we also require `-XDataKinds` for type-level lists so we can recursively accumulate `Constraint`s.
+
+```haskell
+import Data.Kind (Constraint)
+
+type family (+>) (c :: k -> Constraint) (as :: [k]) where
+    (+>) c '[] = (() :: Constraint)
+    (+>) c (h ': t) = (c h, (+>) c t)
+infixl 9 +>
+
+type family (<+>) (ca :: [k -> Constraint]) (cb :: [k]) where
+    (<+>) ca '[] = (() :: Constraint)
+    (<+>) '[] cb = (() :: Constraint)
+    (<+>) (cha ': cta) cbs = (cha +> cbs, cta <+> cbs)
+infixl 9 <+>
+
+test :: [Read, Show, Monoid] <+> [a,b] => a -> b
+test a = let b = read (show a) in b <> b
+
+ >> :t test
+test :: (Monoid b, Monoid a, Show b, Show a, Read b, Read a) => a -> b
+```
+
+Every constraint in the list is applied to every variable in the second list. The expanded type reveals how useful this is syntactically if you're dealing with many constraints.
+
+Do note with GHC 7.10 and earlier, type-level operators are wonky in contexts without parentheses which is unfortunate because type-level combinators are often meant to strip parentheses. With GHC 8.0 this behaviour was rectified and parentheses are no longer necessary, allowing the first example.
+
+```haskell
+ >> a :: [Show, Num] <+> [a, b] => a -> b
+
+ <interactive>:3:33: parse error on input `=>''`
+
+ >> a :: ([Show, Num] <+> [a, b]) => a -> b
+```
+
+## Other notes
+
+It could potentially also be possible to make `=>` into a type-level operator that takes a `Constraint` kind on the LHS. Just making a type-synonym for `=>` doesn't work the way you might expect, rather this constrains it *outside* the context and hence introduces RankNTypes.
+
+```haskell
+type (==>) (c :: Constraint) (a :: *) = c => a
+```
 
 ## Partially applied type constructors
 
@@ -130,20 +192,4 @@ undefined :: E <*> a <*> b :: E a b
 ```
 
 Why?
-
-# Constraint operators
-
--- Introduction to -XConstraintKinds and its effects
-
-In more recent changes: with GHC 7.10 and earlier, type-level operators are wonky in contexts without parentheses which is unfortunate because type-level combinators are often meant to strip parentheses.
-
-```haskell
- >> a :: [Show, Num] <+> [a, b] => a -> b
-
- <interactive>:3:33: parse error on input `=>''`
-
- >> a :: ([Show, Num] <+> [a, b]) => a -> b
-```
-
-With GHC 8.0 this behaviour was rectified and parentheses are no longer necessary, allowing the first example.
 
