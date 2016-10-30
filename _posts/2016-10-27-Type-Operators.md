@@ -3,8 +3,6 @@ layout: post
 title: Fun with type-level combinators
 ---
 
-How did you find your way here??? This document is work-in-progress.
-
 ## A brief historical overview
 
 Type-level operators have a long, but subdued history in GHC. They were originally prefixed with `:` and older literature on the subject will have that present. [Servant](http://www.arow.info/blog/posts/2015-07-10-servant-intro.html) for example uses the old type operator format in datatype definitions. [The original proposal dates back eleven years](https://prime.haskell.org/wiki/InfixTypeConstructors), and also mentions how operators were treated like variables in previous versions of GHC. [With GHC 7.6 that all changed](https://ghc.haskell.org/trac/ghc/ticket/1930):
@@ -22,33 +20,11 @@ So nowadays we can't use type operators as variables anymore, and [some people w
 
 But on the other hand behaviour is more consistent and familiar as they took on behaviour from the value-level.
 
-## So how do I use them?
+Type-level operators, in their current form, were talked about [briefly during the 2014 Christmas calendar "24 Days of GHC Extensions"](https://ocharles.org.uk/blog/posts/2014-12-08-type-operators.html), but otherwise they don't seem to have had much presence.
 
+## Getting to the meat of it
 
-
-
-
-In more recent changes: with GHC 7.10 and earlier, type-level operators are wonky in contexts without parentheses which is unfortunate because type-level combinators are often meant to strip parentheses.
-
-```haskell
- >> a :: [Show, Num] <+> [a, b] => a -> b
-
- <interactive>:3:33: parse error on input `=>''`
-
- >> a :: ([Show, Num] <+> [a, b]) => a -> b
-```
-
-With GHC 8.0 this behaviour was rectified and parentheses are no longer necessary, allowing the first example.
-
--- Introduction to -XConstraintKinds and its effects
-
-
-
-Type-level operators, in their current form, were talked about [briefly during the 2014 Christmas calendar "24 Days of GHC Extensions"](https://ocharles.org.uk/blog/posts/2014-12-08-type-operators.html), but otherwise they don't seem to have had much presence. I think that's unfortunate because I believe people *want* type-level combinators based on how much they're used at value-level, may just not be aware of it.
-
-## Type-level combinators
-
-Type-level operators are just what they say on the tin, and this means you can use `data`, `newtype`, `type`, `type family`, and so on, to define type constructors in the shape of operators. A 'common' example is the function application operator `$`, which can be defined in various ways, and as expected allows you to rid excessive parentheses and sequentialize your type signatures.
+Type-level operators are just what they say on the tin, and this means you can use `data`, `newtype`, `type`, `type family`, and so on, to define type constructors in the shape of operators. A 'common' example is the function application operator `$`, which can be defined in various ways, and as expected allows you to rid excessive parentheses and 'sequentialize' your type signatures.
 
 ```haskell
 type (f $ a) = f a
@@ -58,8 +34,6 @@ type family ($) f a where
 
 a :: Either String $ Maybe Int
 ```
-
-## Why use them?
 
 You'd want to use type-level combinators for the same reasons you'd want them at the value-level: they're syntactic conveniences. They often strip parentheses away, or shave charcters off.
 
@@ -150,11 +124,26 @@ type E a b = Either a b
 
 In some cases we are lucky and can define type synonyms partially applied, which does make it work. This simply isn't always possible, as is the case with Flip.
 
-```
+```haskell
 type E = Either
 undefined :: E <*> a <*> b :: E a b
-
 ```
 
 Why?
+
+# Constraint operators
+
+-- Introduction to -XConstraintKinds and its effects
+
+In more recent changes: with GHC 7.10 and earlier, type-level operators are wonky in contexts without parentheses which is unfortunate because type-level combinators are often meant to strip parentheses.
+
+```haskell
+ >> a :: [Show, Num] <+> [a, b] => a -> b
+
+ <interactive>:3:33: parse error on input `=>''`
+
+ >> a :: ([Show, Num] <+> [a, b]) => a -> b
+```
+
+With GHC 8.0 this behaviour was rectified and parentheses are no longer necessary, allowing the first example.
 
