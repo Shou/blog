@@ -10,10 +10,13 @@
 
 code {
   font-family: 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono','Courier', monospace;
-  font-size: 0.9rem
+  font-size: 0.9rem;
 }
 
-.highlighter-rouge { background: #faf8f8; border: 0.1rem solid #e8e8e8 }
+code.highlighter-rouge {
+  background: #faf8f8;
+  border: 0.1rem solid #e8e8e8;
+}
 
 .highlight .hll { background-color: #ffffcc }
 .highlight .c { color: #0099FF; font-style: italic } /* Comment */
