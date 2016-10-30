@@ -1,7 +1,9 @@
 ---
 layout: post
-title: Fun with type-level combinators
+title: Type-level combinators
 ---
+
+Type-level operator are helpful syntactic combinators, and much of the work incorporated into the [type-operators](https://www.stackage.org/package/type-operators) package is shown here.
 
 ## A brief historical overview
 
@@ -82,9 +84,9 @@ type family (f1 * f2) where
 infixl 9 *
 ```
 
-The downside to this is that it consumes tuples on the left, even if it's intended to be a tuple.
+The downside to this is that it consumes tuples on the left, even if it's intended to be a tuple. I'm sadly unaware of any way around that issue while retaining the simplicity.
 
-We can also go a little crazy and define Applicative and Monadic constrained function type operators, with RankNTypes.
+We can also go a little crazy and define Applicative and Monadic constrained function type operators, with `-XRankNTypes` enabled.
 
 ```haskell
 type (a *> b) = forall m. Applicative m => m a -> m b
@@ -93,6 +95,21 @@ type (a >> b) = forall m. Monad m => m a -> m b
 
 idM :: a >> a
 idM m = m >>= return . id
+```
+
+Or a little more unconventional and compress function types with a sequence type family. This requires `-XUndecidableInstances`.
+
+```haskell
+type family IfEmpty xs a b where
+    IfEmpty '[] a b = a
+    IfEmpty (x ': xs) a b = b
+
+type family S ts where
+    S (a ': b ': rest) = IfEmpty rest (a -> b) (a -> b -> S rest)
+    S '[a] = a
+
+ >> :t undefined :: S [a,b,c,d]
+undefined :: S [a,b,c,d] :: a -> b -> c -> d
 ```
 
 Going further with constraints, we can leverage the `-XConstraintKinds` language extension to make some pretty handy operators. This language extension gives us the `Constraint` kind allowing us to say a type variable has `c :: Constraint`, or even `f :: * -> Constraint`. For our example we also require `-XDataKinds` for type-level lists so we can recursively accumulate `Constraint`s.
