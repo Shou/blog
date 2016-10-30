@@ -97,7 +97,7 @@ idM :: a >> a
 idM m = m >>= return . id
 ```
 
-Or a little more unconventional and compress function types with a sequence type family. This requires `-XUndecidableInstances`.
+Or a little more unconventional and compress function types with a sequence type family. This requires `-XUndecidableInstances` and `-XDataKinds`.
 
 ```haskell
 type family IfEmpty xs a b where
@@ -112,7 +112,9 @@ type family S ts where
 undefined :: S [a,b,c,d] :: a -> b -> c -> d
 ```
 
-Going further with constraints, we can leverage the `-XConstraintKinds` language extension to make some pretty handy operators. This language extension gives us the `Constraint` kind allowing us to say a type variable has `c :: Constraint`, or even `f :: * -> Constraint`. For our example we also require `-XDataKinds` for type-level lists so we can recursively accumulate `Constraint`s.
+`S` is a recursive function that just applies `->` between every element until the end of the list is hit. A single element is just the element itself, and there is no instance for empty lists.
+
+Going further with constraints and type-level lists, we can leverage the `-XConstraintKinds` language extension to make some pretty handy operators. This language extension gives us the `Constraint` kind allowing us to say a type variable has `c :: Constraint`, or even `f :: * -> Constraint`. 
 
 ```haskell
 import Data.Kind (Constraint)
@@ -145,14 +147,6 @@ Do note with GHC 7.10 and earlier, type-level operators are wonky in contexts wi
  <interactive>:3:33: parse error on input `=>''`
 
  >> a :: ([Show, Num] <+> [a, b]) => a -> b
-```
-
-## Other notes
-
-It could potentially also be possible to make `=>` into a type-level operator that takes a `Constraint` kind on the LHS. Just making a type-synonym for `=>` doesn't work the way you might expect, rather this constrains it *outside* the context and hence introduces RankNTypes.
-
-```haskell
-type (==>) (c :: Constraint) (a :: *) = c => a
 ```
 
 ## Partially applied type constructors
@@ -201,12 +195,20 @@ type E a b = Either a b
       In the expression: undefined :: (E <*> a) <*> b`
 ```
 
-In some cases we are lucky and can define type synonyms partially applied, which does make it work. This simply isn't always possible, as is the case with Flip.
+In some cases we are lucky and can define type synonyms partially applied, which does make it work, but this isn't always possible as is the case with Flip above.
 
 ```haskell
 type E = Either
 undefined :: E <*> a <*> b :: E a b
-```
 
-Why?
+type ($) f = f
+
+type family Map f ts where
+    Map f (a ': rest) = f a ': Map f rest
+    Map f '[] = '[]
+
+ >> :t undefined :: S (Map (($) Maybe) [a,b,c])
+undefined :: S (Map (($) Maybe) [a,b,c])
+          :: Maybe a -> Maybe b -> Maybe c
+```
 
