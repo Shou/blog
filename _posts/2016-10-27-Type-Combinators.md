@@ -161,7 +161,6 @@ undefined :: Either <*> a <*> b :: Either a b
 `Either` is a a type defined using the `data` keyword, allowing partial application. We can also partially apply classes.
 
 ```haskell
-
 class C a b where
     c :: a -> b -> a
 
