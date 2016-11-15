@@ -1,7 +1,12 @@
 ---
 layout: post
-title: Type-level combinators
+title: Through type-level combinators
 ---
+
+## TODO
+
+- Type-level operators behaviour in `class`, `type family`, `GADT`, et al.
+
 
 Type-level operator are helpful syntactic combinators, and much of the work incorporated into the [type-operators](https://www.stackage.org/package/type-operators) package is shown here.
 
@@ -69,7 +74,8 @@ type family (a * b) where
 
 Type synonyms don't show the underlying definition of the type as you'd expect but type families do. This may make operator combinators more amicable to the novice as they can easily expose the underlying definition without having to look up Hackage documentation. Just whip out GHCi and go nuts.
 
-This operator is the tuple constructor -- some languages use this constructor instead of parentheses and commas, such as Isabelle. It comes from set theory's Cartesian product operator, the logic behind it is that types are sets of values. One that accepts arbitrary size tuples up to 9 is also possible with type families.
+This operator is the tuple constructor -- some languages use this constructor instead of parentheses and commas, such as Isabelle. It can be seen as the product of two types in type theory, or set theory's Cartesian product operator where the logic behind it is that types are sets of values. One that accepts arbitrary size tuples up to 9 is also possible with type families.
+
 
 ```haskell
 type family (f1 * f2) where
