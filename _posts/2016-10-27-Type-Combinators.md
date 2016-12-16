@@ -6,6 +6,7 @@ title: Through type-level combinators
 ## TODO
 
 - Type-level operators behaviour in `class`, `type family`, `GADT`, et al.
+- Use :kind! to inspect types rather than `undefined :: blah`
 
 
 Type-level operator are helpful syntactic combinators, and much of the work incorporated into the [type-operators](https://www.stackage.org/package/type-operators) package is shown here.
@@ -16,7 +17,7 @@ Type-level operators have a long, but subdued history in GHC. They were original
 
 > From the 7.6.1 release notes: "The behavior of the TypeOperator extension has changed: previously, only type operators starting with ":" were considered type constructors, and other operators were treated as type variables. Now type operators are always constructors. "
 
-So nowadays we can't use type operators as variables anymore, and [some people were unhappy about that change](http://haskell.1045720.n5.nabble.com/Type-operators-in-GHC-td5154978.html) because it meant, e.g. that this was no longer possible:
+So nowadays we are unable to use type operators as variables anymore, and [some people were unhappy about that change](http://haskell.1045720.n5.nabble.com/Type-operators-in-GHC-td5154978.html) because it meant, e.g. that this was no longer possible:
 
 ```haskell
  >> :type a :: (Arrow (~>)) => a ~> b
@@ -31,26 +32,28 @@ Type-level operators, in their current form, were talked about [briefly during t
 
 ## Getting to the meat of it
 
-Type-level operators are just what they say on the tin, and this means you can use `data`, `newtype`, `type`, `type family`, and so on, to define type constructors in the shape of operators. A 'common' example is the function application operator `$`, which can be defined in various ways, and as expected allows you to rid excessive parentheses and 'sequentialize' your type signatures.
+Type-level operators are just what they say on the tin, and this means you can use `data`, `newtype`, `type`, `type family`, `class`, and so on, to define type constructors in the shape of operators. A 'common' example is the function application operator `$`, which can be defined in various ways, and as expected allows you to rid excessive parentheses and 'sequentialize' your type signatures.
+
+While we're at it, let's get a little opinionated and 'fix' `$` by specifying its fixity with a hyphen. We'll see why shortly...
 
 ```haskell
-type (f $ a) = f a
-type ($) f = f
-type family ($) f a where
-    ($) f a = f a
+type (f $- a) = f a
+type ($-) f = f
+type family ($-) f a where
+    ($-) f a = f a
 
-a :: Either String $ Maybe Int
+a :: Either String $- Maybe Int
 ```
 
-You'd want to use type-level combinators for the same reasons you'd want them at the value-level: they're syntactic conveniences. They often strip parentheses away, or shave characters off.
+This is your average function application operator, except now living at the type-level. With some added type-level caveats, it works pretty much the same as.
 
-Some operators should be familiar to any users who've dealt with value-level combinators in `base`. Applicative patterns such as `<$>` with `<*>` are for example possible, but without the applicative-ness of it.
+Now, there's also the helpful *argument* application operator. This is identical to the function application operator but its fixity is flipped. This happens to allow us to apply arbitrary amounts of arguments. This pattern may be familiar if you've used Applicative's `<*>`.
 
 ```haskell
-type (<*>) f a = f a
-infixl 4 <*>
+type (-$) f a = f a
+infixl 4 -$
 
-a :: Either <*> SomeException ^> IO () <*> Maybe Int
+a :: Either -$ SomeException ^> IO () -$ Maybe Int
 =
 a :: Either (SomeException -> IO ()) (Maybe Int)
 ```
@@ -103,7 +106,7 @@ idM :: a >> a
 idM m = m >>= return . id
 ```
 
-Or a little more unconventional and compress function types with a sequence type family. This requires `-XUndecidableInstances` and `-XDataKinds`, which loosen the type family instance restrictions, and enable type-level literals including type-level lists.
+Or a little unconventional and compress function types with a sequence type family. This requires `-XUndecidableInstances` and `-XDataKinds`, which loosen the type family instance restrictions, and enable type-level literals including type-level lists.
 
 ```haskell
 type family IfEmpty xs a b where
@@ -157,11 +160,11 @@ Do note with GHC 7.10 and earlier, type-level operators are wonky in contexts wi
 
 ## Partially applied type constructors
 
-One of the big conveniences functional programming has at the value-level is partial application. Remember the `<*>` type operator from earlier? That uses partial application to its advantage.
+One of the big conveniences functional programming has at the value-level is partial application. Remember the `-$` type operator from earlier? That uses partial application to its advantage.
 
 ```haskell
- >> :t undefined :: Either <*> a <*> b
-undefined :: Either <*> a <*> b :: Either a b
+ >> :t undefined :: Either -$ a -$ b
+undefined :: Either -$ a -$ b :: Either a b
 ```
 
 `Either` is a type defined using the `data` keyword, allowing partial application. We can also partially apply classes.
@@ -215,5 +218,16 @@ type family Map f ts where
  >> :t undefined :: S (Map (($) Maybe) [a,b,c])
 undefined :: S (Map (($) Maybe) [a,b,c])
           :: Maybe a -> Maybe b -> Maybe c
+```
+
+`-XLiberalTypeSynonyms` seems to lax the rules. An example from the GHC test suite:
+
+```haskell
+type Thing m = m ()
+
+type Const a b = a
+
+test :: Thing (Const Int) -> Thing (Const Int)
+test = test
 ```
 
